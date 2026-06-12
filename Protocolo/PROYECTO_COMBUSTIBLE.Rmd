@@ -1,0 +1,450 @@
+---
+title: "PROYECTO_COMBUSTIBLE"
+author: "MONICA VELASCO, SEBASTIAN CUADROS, JUAN CRUZ"
+date: "2026-06-06"
+output:
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    number_sections: true
+    theme: cosmo
+    highlight: tango
+    code_folding: show
+---
+
+
+#  Definición del problema
+
+El presente análisis se centra en el consumo de combustible y las emisiones de CO2 de los vehículos del modelo 2014, con el objetivo de entender cómo las características técnicas de los automóviles, como el tipo de combustible, la cilindrada del motor, y el tipo de transmisión, influyen en la eficiencia del combustible y en la huella de carbono de cada modelo. A medida que las preocupaciones ambientales aumentan, se vuelve crucial identificar cuáles vehículos son más eficientes y menos contaminantes, así como las tendencias en el uso de diferentes tipos de combustible (gasolina, diésel, etanol) en el mercado automotriz. Este análisis permitirá a los consumidores tomar decisiones informadas y a los fabricantes ajustar sus estrategias de producción y marketing hacia modelos más sostenibles, que es lo que se quiere lograr con este proyecto.
+
+- **Datos:** Fueron tomados de la plataforma de Kaggle, y lo escogimos porque nos parece interesante ver como este tema, puede aumentar las emisiones de CO2, sin darnos cuenta mientras conducimos o adquirimos algún vehículo.
+
+# Objetivos
+
+## Objetivo general
+
+Realizar un análisis exploratorio de datos de nuestro dataset relacionado con las emisiones de dioxido de carbono CO2, con el fin de identificar patrones relacionados con la emisión, encontrando relaciones al respecto con las demás variables.
+
+## Objetivos específicos
+
+- Identificar y describir las principales variables seleccionadas para el estudio.
+- Realizar un proceso de limpieza y preparación de los datos.
+- Analizar la distribución de las emisiones de CO2 según su tipo de transmisión.
+- Examinar la eficiencia del combustible, comparando sus tipos.
+- Visualizar los resultados mediante tablas y gráficos descriptivos.
+
+# Desarrollo del proyecto
+
+El desarrollo de este proyecto se llevará a cabo en R que es un lenguaje de programación y un entorno de software libre especializado en análisis estadístico, minería de datos y visualización gráfica. Es ampliamente utilizado por estadísticos, científicos de datos e investigadores debido a su potencia para el tratamiento de grandes volúmenes de datos, su flexibilidad y su amplia gama de paquetes y funciones especializadas.
+
+Entre sus principales características se destacan:
+
+- Soporte avanzado para estadísticas,
+- modelamiento,
+- aprendizaje automático,
+- Gráficas de alta calidad,
+
+RStudio es un entorno de desarrollo integrado (IDE) para R que facilita la escritura de código, el análisis de datos y la generación de informes. Es una herramienta muy popular porque mejora la experiencia de uso de R, ofreciendo una interfaz amigable y múltiples funcionalidades que organizan el trabajo del usuario.
+
+## Carga de librerias
+
+```{r}
+library(readr)
+library(dplyr)
+library(VIM)
+library(knitr)
+library(ggplot2)
+library(mice)
+```
+
+##  Carga del dataset
+
+```{r}
+file.exists("C:/Users/monic/Desktop/PROYECTO TOMA DE DECISIONES/DATOS/Vehicles.csv")
+```
+
+```{r}
+datos <- read_csv(
+  "C:/Users/monic/Desktop/PROYECTO TOMA DE DECISIONES/DATOS/Vehicles.csv"
+)
+
+glimpse(datos)
+```
+
+## Exploración de los Datos
+
+###  Verificar los primeros registros
+
+```{r}
+head(datos)
+
+## Verificar las ultimas filas
+```
+
+```{r}
+tail(datos) # últimos registros
+```
+
+###  Verificar nombres de columnas
+
+```{r}
+colnames(datos)
+```
+
+> Verificamos los nombres de las variables que contempla nuestro dataset, donde nuestra variable objetivo es "Trany"
+
+### Resumen general
+
+```{r}
+summary(datos)
+```
+> El análisis de los resultados muestra un conjunto de datos extenso y variado sobre las emisiones de CO2 y el consumo de combustible de vehículos. Las variables incluyen métricas como el consumo de combustible en diferentes condiciones (ciudad, carretera, combinado) y emisiones de CO2, que presentan una amplia gama de valores. Por ejemplo, el consumo combinado (comb08) varía desde 7.00 hasta 146.00, lo que indica diferencias significativas en la eficiencia de combustible entre los modelos de vehículos. Además, las emisiones de CO2 muestran valores que oscilan entre -1.0 (indicando datos faltantes o no aplicables) y 979.0 g/km, sugiriendo que algunos vehículos son significativamente más contaminantes que otros. La media de la variable city08 es de 20.82 mpg, lo que sugiere que, en promedio, los vehículos tienen un rendimiento moderado en entornos urbanos. Sin embargo, la presencia de valores extremos y datos faltantes en varias columnas, como se observa en las variables relacionadas con el tipo de combustible y el rendimiento, sugiere la necesidad de un procesamiento adicional para asegurar la calidad y la integridad del análisis. En general, estos resultados ofrecen una base sólida para evaluar el impacto ambiental de los vehículos y guiar decisiones en políticas de sostenibilidad y eficiencia energética.
+
+### Dimensiones del archivo
+
+```{r}
+dim(datos)
+```
+
+> El archivo tiene tiene 49927 registros y 84 columnas(variables)
+
+### Estructura de datos:
+
+```{r}
+str(datos)
+```
+
+> Tenemos información detallada sobre las características y el rendimiento de los vehículos. Las variables numéricas, como barrels08, city08, highway08, y comb08, muestran un rango variado en el consumo de combustible, con valores que van desde 0 hasta cifras más altas, lo que indica diferencias significativas en la eficiencia de los vehículos. Por ejemplo, el consumo en ciudad (city08) oscila entre 9 y 23 mpg, lo que sugiere que algunos vehículos son considerablemente más eficientes que otros en entornos urbanos. Además, las variables de emisiones de CO2 (co2 y co2TailpipeGpm) presentan muchos valores de -1, lo que indica datos faltantes o no aplicables, lo que puede afectar el análisis. Las características del motor, como el número de cilindros (cylinders) y la cilindrada (displ), también varían ampliamente, lo que puede influir en el rendimiento y las emisiones. La inclusión de variables categóricas, como make, model, y fuelType, permite una segmentación adicional para el análisis, facilitando la identificación de patrones y tendencias en el consumo de combustible y las emisiones. Sin embargo, la presencia de múltiples valores nulos en varias columnas sugiere la necesidad de un proceso de limpieza exhaustivo para garantizar la calidad del análisis y la validez de las conclusiones. En general, estos datos ofrecen una base sólida para investigar la relación entre las características del vehículo y su impacto ambiental.
+
+
+## Identificación de datos faltantes
+
+### Valores perdidos 
+Son todos los que estén perdidos en nuestro dataframe
+
+```{r}
+perdidos_datos <- sum(is.na(datos))
+
+print(paste("Total de datos perdidos:", perdidos_datos))
+```
+> Para nuestro conjunto de datos presentamos un número grado de datos perdidos un total de 539,331 registros, lo que podría afectar la calidad del análisis y las conclusiones que se puedan extraer de los datos.
+
+### Verificar datos faltantes por columna
+
+```{r}
+missing_data <-  colSums(is.na(datos))
+
+#creamos un dataframe con los resultados 
+
+tabla_missing <- data.frame(
+  Columna = names (missing_data),
+  Datos_Perdidos = missing_data
+)
+
+
+
+tabla_missing <- rbind(tabla_missing, data.frame(Columna = "Total", Datos_Perdidos = perdidos_datos))
+
+# Ordenamos la Tabla
+Tabla_missing_ordenada <- tabla_missing %>%
+  filter(Columna != "Total") %>%
+  arrange(desc(Datos_Perdidos)) %>%
+  rbind(data.frame(Columna = "Total", Datos_Perdidos = perdidos_datos))
+
+Tabla_missing_ordenada
+```
+
+> En algunas variables tenemos una gran cantidad de datos faltantes, para visualizarlos y clasificarlos de mejor manera, veamos el diguiente gráfico:
+
+### Visualización de datos faltantes
+
+Aquí hacemos uso de la libreria 'VIM', que nos ayuda a visualizar estos datos faltantes de manera más efectiva.
+
+```{r}
+aggr(datos, col = c('navyblue', 'yellow'), numbers = TRUE, sortVars = TRUE, labels = names(datos), cex.axis = 0.7, gap = 3, ylab = c("Proporción de Datos Faltantes", "Variables"))
+```
+
+> La gráfica presentada, generada mediante la función aggr de la librería VIM, confirma que el conjunto de datos tiene varias variables que presentan una cantidad significativa de valores ausentes, lo que podría afectar la calidad y la integridad del análisis posterior. En particular, las variables guzzler, trans_dscr, tCharger, sCharger, atvType, fuelType2, rangeA, evMotor, y mfrCode tienen un número considerable de datos faltantes, con hasta 47,089 entradas ausentes en guzzler. Esto representa aproximadamente el 94% del total de registros, sugiriendo que esta variable podría no ser confiable o útil para el análisis. Otras variables, como fuelCostA08 y combA08, también muestran valores nulos, aunque en menor medida. Por otro lado, variables como cylinders, displ, drive, y engId tienen pocos o ningún dato faltante, lo que indica que son más completas y podrían ser más confiables para el análisis. La presencia de datos faltantes en múltiples columnas resalta la necesidad de implementar estrategias de imputación o eliminación de registros para asegurar que el análisis sea representativo y no sesgado.
+
+## Identificador de Duplicados
+
+### verificamos si hay datos duplicados
+
+```{r}
+duplicated_rows <- datos[duplicated(datos), ]
+nrow(duplicated_rows)
+```
+> No hay datos duplicados despues de nuestro dataset, el cual, nos queda confirmada tras ejecutar la validación de registros únicos, garantiza la integridad y la calidad de la información, permitiendo que cada una de los 49,927 observaciones represente una entidad única y auténtica dentro del análisis; esto es fundamental para evitar sesgos estadísticos o una sobreestimación de ciertos modelos de vehículos, asegurando que los resultados obtenidos en el análisis exploratorio y las conclusiones sobre el consumo de combustible y emisiones de CO2 sean precisos, fiables y representativos de la realidad del mercado automotriz del modelo 2014.
+
+### Datos repetivos sin tener en cuenta el ID
+
+Como no tenemos datos repetidos en nuestro dataset, verificamos si esto se debe a la variable ID o si confirmamos que en realidad no se tienen datos repetidos.
+
+```{r}
+datos_sin <-(datos[ , -1])
+head(datos_sin)
+```
+
+**Averiguamos el número total de filas repetidas**
+
+```{r}
+sum(duplicated(datos))
+```
+
+> Confirmando nuevamente que en nuestro dataset no se presenta el duplicado de datos.
+
+
+### Eliminamos columnas con datos perdidos
+Data sin datos perdidos, es decir, eliminamos columnas con los valores perdidos más altos y que no se relacionan directamente con las emisiones de CO2 y el tipo de transmisión del automovil, además, eliminamos las columnas con valores nulos.
+
+
+```{r}
+Columnas_a_eliminar <- c("c240bDscr", "c240Dscr", "sCharger", "rangeA", "guzzler", "atvType", "tCharger", "trans_dscr", "startStop", "mfrCode", "eng_dscr", "displ", "drive", "mpgData", "pv2", "pv4", "range", "rangeCity", "barrelsA08", "charge120", "charge240", "charge240b", "city08U", "cityA08", "cityA08U", "cityCD", "cityE", "cityUF", "co2TailpipeAGpm", "comb08U", "combA08", "combA08U", "combE", "combinedCD", "combinedUF", "fuelCostA08", "highway08U", "highwayA08", "highwayA08U", "highwayCD", "highwayE", "highwayUF", "lv2", "rangeCityA", "rangeHwy", "rangeHwyA", "UCityA", "UHighwayA", "phevCity",
+"phevHwy", "phevComb" )
+
+datos_limpios <- datos[, !(names(datos) %in% Columnas_a_eliminar)]
+
+
+head(datos_limpios)
+```
+```{r}
+dim(datos_limpios)
+```
+> Ahora bajamos la dimensionalidad de nuestro conjunto de datos (pasar de 84 columnas a 33 columnas (variables)) dejandolo más limpio, sin columnas nulas y sin datos faltantes innecesarios para nuestra investigación.
+
+Vemos las columas con las que quedamos en nuestros datos 
+
+```{r}
+colnames(datos_limpios)
+```
+> Después de llevar a cabo un proceso de limpieza de datos y eliminar columnas que no aportaban valor significativo al análisis, hemos reducido nuestro conjunto de datos a un total de 33 columnas clave. Estas columnas incluyen variables relevantes como "barrels08", que puede indicar el consumo de combustible, y "co2", que refleja las emisiones de dióxido de carbono. También se conservan columnas que proporcionan información sobre el tipo de combustible, el rendimiento del vehículo y las características del modelo, como "fuelType", "hpv" y "year". Esta selección de columnas es fundamental para realizar un análisis más enfocado y efectivo, ya que se centra en datos que son más propensos a influir en los resultados y en la toma de decisiones. La limpieza ha permitido eliminar el ruido de datos irrelevantes, mejorando así la calidad y la utilidad del conjunto de datos.
+
+***NOTA:*** NO SE ELIMINARON POR FILAS YA QUE AL REALIZARLO ME QUEDO SIN REGISTROS. ENTONCES SOLO QUITAMOS COLUMNAS QUE NO SE RELACIONAN CON NUESTRA VARIABLE OBJETIVO.
+
+##  Análisis estadístico descriptivo
+
+### Variable cualitativa
+
+Para estos análisis, usamos nuestro 'summary' que ya ejecutamos anteriormente y con ello ya vimos nuestras variables numéricas, pero para dar un mejor orden, veamos el resumen mediante una tabla, pero esta va a estar convertida, en un data frame, para que su organización sea mucho mejor, además tendremos en cuenta que para la transmisión se va a tener un código donde esta compuesto por tres carácteres, las cuales son:
+
+- Primer carácter: tipo de transmisión (manual, automatico).
+- Segundo carácter: Cantidad de cambios que tiene el vehículo.
+- Tercer carácter: marca del modelo del vehículo.
+
+```{r}
+tabla_transmison <- data.frame(sort(table(datos_limpios$trany),
+                                      decreasing = TRUE))
+
+colnames(tabla_transmison) <- c("trany", "Frecuencia")
+
+tabla_transmison
+```
+
+> El análisis de la distribución de frecuencias de la variable cualitativa "trany" revela que la mayoría de los vehículos en el conjunto de datos están equipados con transmisiones automáticas de 4 velocidades, representando 11,048 casos, lo que indica una clara preferencia por este tipo de transmisión entre los modelos analizados. Otras transmisiones automáticas, como la de 6 velocidades y las variantes automáticas (S8 y S6), también tienen una representación significativa, aunque considerablemente menor, con 3,648 y 3,379 respectivamente. Las transmisiones manuales, aunque menos comunes, muestran una presencia notable, especialmente la manual de 5 velocidades con 8,392 unidades. En general, la tendencia sugiere que las transmisiones automáticas son las más populares, reflejando una posible inclinación hacia la comodidad y facilidad de uso entre los consumidores, mientras que las transmisiones manuales, aunque menos frecuentes, aún mantienen una participación relevante en el mercado.
+
+### Variable cuantitativa
+
+```{r}
+summary(datos_limpios$co2TailpipeGpm)
+```
+
+> El análisis de la variable cuantitativa muestra una distribución que abarca un rango considerable, con un valor mínimo de 0.0 y un máximo de 1,269.6. La mediana se sitúa en 444.4, lo que indica que la mitad de los datos se encuentra por debajo de este valor, sugiriendo una tendencia central moderada. El promedio, ligeramente superior a la mediana con 444.5, sugiere que hay algunos valores extremos que están elevando la media, dado que el máximo es significativamente más alto que la mayoría de los datos. Los cuartiles revelan que el 1er cuartil es 370.3 y el 3er cuartil es 522.8, indicando que el 25% de los valores son inferiores a 370.3 y el 25% superior a 522.8. 
+
+## Visualización de datos
+
+### Histograma de las emisiones de CO2
+
+```{r}
+hist(datos_limpios$co2TailpipeGpm, 
+     main = "Distribución de Emisiones de CO2", 
+     xlab = "Emisiones de CO2 (g/km)", 
+     ylab = "Frecuencia", 
+     col = "blue", 
+     border = "black")
+```
+
+> El histograma muestra la distribución de las emisiones de CO2 (g/km) de los vehículos analizados, revelando una distribución unimodal con un sesgo positivo hacia la derecha. La mayor concentración de datos se encuentra en el rango de los 400 a 500 g/km, donde se observa la frecuencia más alta, superando las 15,000 unidades. Si bien la mayoría de los vehículos se agrupan entre los 300 y 600 g/km, existe una presencia notable de valores atípicos hacia la derecha que alcanzan hasta los 1,200 g/km, lo que indica que, aunque la mayoría de los vehículos presentan niveles de emisión moderados, hay una minoría de modelos con emisiones significativamente más elevadas que impactan la dispersión total del conjunto de datos.
+
+```{r}
+boxplot(
+  datos_limpios$co2TailpipeGpm,
+  horizontal = TRUE,
+  col = "skyblue",
+  border = "darkblue",
+  main = "Cajas y Bigotes de emisiones de CO2",
+  xlab = "Emisiones CO2"
+)
+```
+
+> El diagrama de caja y bigotes nos muestra la distribución de las emisiones de CO2, destacando una mediana situada aproximadamente en los 450 g/km, con una caja central que concentra el 50% de los datos entre los cuartiles primero y tercero. Es notable la presencia de una gran cantidad de valores atípicos (outliers) tanto por debajo como por encima de los bigotes, lo que indica una variabilidad extensa y la existencia de vehículos con niveles de emisión extremos, especialmente en el extremo superior que llega hasta cerca de los 1,300 g/km. Esta representación confirma que, aunque existe un comportamiento central definido, la dispersión de los datos es significativa y está fuertemente influenciada por modelos que se alejan considerablemente del promedio general.
+
+## Limpieza de Datos
+
+### Renombramos las columnas
+
+```{r}
+datos_renombrados <- datos_limpios %>%
+  rename(
+    Barriles = barrels08,
+    Ciudad = city08,
+    Co2 = co2,
+    Co2_a = co2A,
+    Co2_tubo_escape = co2TailpipeGpm,
+    Combinado = comb08,
+    Cilindros = cylinders,
+    Id_motor = engId,
+    Puntaje_eficiencia = feScore,
+    Costo_combustible = fuelCost08,
+    Tipo_combustible = fuelType,
+    Tipo_combustible_1 = fuelType1,
+    Puntaje_ghg = ghgScore,
+    Puntaje_ghg_a = ghgScoreA,
+    Carretera = highway08,
+    Volumen_alto = hlv,
+    Volumen_pasajeros = hpv,
+    Id = id,
+    Volumen_lujo_4 = lv4,
+    Marca = make,
+    Modelo = model,
+    Phev_mezclado = phevBlended,
+    Transmision = trany,
+    Ciudad_ajustada = UCity,
+    Carretera_ajustada = UHighway,
+    Clase_vehiculo = VClass,
+    Año = year,
+    Ahorro_gasto = youSaveSpend,
+    Modelo_base = baseModel,
+    Tipo_combustible_2 = fuelType2,
+    Motor_electrico = evMotor,
+    Creado_en = createdOn,
+    Modificado_en = modifiedOn
+  )
+
+# Verificar los nuevos nombres
+colnames(datos_renombrados)
+```
+
+Verificación de las categorías con las frecuencias correspondientes, de la variable transmisión.
+
+```{r}
+tabla_trans_limp <- data.frame(sort(table(datos_renombrados$Transmision),
+                                      decreasing = TRUE))
+
+colnames(tabla_trans_limp) <- c("Transmisión", "Frecuencia")
+
+tabla_trans_limp
+```
+
+### Identificación de Valores atípicos
+
+Hacemos uso del Rango intercuartilico para detectar que filas contienen emisiones inusualmente altas:
+
+```{r}
+
+Q1 <- quantile(datos_renombrados$Co2_tubo_escape, 0.25)
+Q3 <- quantile(datos_renombrados$Co2_tubo_escape, 0.75)
+RIC <- Q3 - Q1
+
+# Definir límites
+limite_superior <- Q3 + 1.5 * RIC
+
+# Identificar los registros que son valores atípicos
+outliers <- datos_renombrados[datos_renombrados$Co2_tubo_escape > limite_superior, ]
+
+# Ver cuántos outliers encontramos
+cat("Número de valores atípicos detectados:", nrow(outliers), "\n")
+```
+
+> La detección de 726 valores atípicos en el conjunto de datos sugiere la presencia de una cantidad significativa de observaciones que se desvían notablemente del comportamiento central de las emisiones de CO2, lo cual es consistente con la alta variabilidad observada en los gráficos previos. Aunque esta cifra representa una proporción específica de la muestra total, su existencia indica que existen vehículos con características técnicas o rendimientos extremos, ya sea por niveles de emisión inusualmente bajos o, más probablemente, muy altos; por lo tanto, es fundamental evaluar si estos registros corresponden a errores de medición o si representan casos reales de vehículos de alto consumo que deben ser considerados cuidadosamente para no sesgar los análisis estadísticos.
+
+Antes de eliminar estos registros, vamos a revisar cuales, exactamente están presentando estos valores atípicos
+
+```{r}
+# Ver qué modelos son los que se van a eliminar
+outliers_info <- datos_renombrados%>% filter(Co2_tubo_escape > limite_superior)
+print(outliers_info[, c("Marca", "Modelo", "Co2_tubo_escape")])
+
+```
+
+> Los modelos identificados como valores atípicos corresponden mayoritariamente a vehículos de alto rendimiento, lujo o gran tamaño, como deportivos de marcas exclusivas (Ferrari, Rolls-Royce) y camionetas de carga o pasajeros de gran capacidad (Dodge, Ford), los cuales presentan emisiones de CO2 significativamente elevadas, superando los 800 g/km. Esta selección confirma que los valores extremos no son errores de captura, sino registros reales de vehículos con motores de gran cilindrada y baja eficiencia energética.
+
+```{r}
+datos_sin_errores <- datos_renombrados %>%
+  filter(Co2_tubo_escape <= limite_superior)
+```
+
+Verificamos la cantidad de registros eliminados
+
+```{r}
+# Verificar la cantidad de registros eliminados
+cat("Registros originales:", nrow(datos_renombrados), "\n")
+cat("Registros después de la limpieza:", nrow(datos_sin_errores), "\n")
+cat("Total de registros eliminados:", nrow(datos_renombrados) - nrow(datos_sin_errores), "\n")
+```
+
+```{r}
+# Cantidad de datos perdidos por columna
+colSums(is.na(datos_sin_errores))
+```
+
+```{r}
+dim(datos_sin_errores)
+```
+
+> Representa que hicimos una limpieza de 726 registros bajando la dimensionalidad de nuestro dataset original. Esta limpieza representa una reducción mínima del total de registros, lo que indica que la mayoría de los datos permanecen intactos y representativos del comportamiento general de la flota de vehículos analizada. La decisión de eliminar estos 726 registros se da en la necesidad de mantener la integridad y la homogeneidad del análisis. Los valores atípicos, aunque válidos, corresponden a vehículos de alto rendimiento y gran cilindrada que no reflejan el consumo promedio de la mayoría de los automóviles en el mercado. Al no incluir estos outliers, evitamos que su influencia desproporcionada distorsione las estadísticas descriptivas y los resultados de modelos predictivos.
+
+### Estandarización de las variables
+
+Para facilitar la comparación entre variables con diferentes unidades de medida como lo son: el tamaño del motor en litros frente al consumo en L/100km, se procedió a la estandarización de las variables cuantitativas mediante la técnica de Z-score. Este proceso transforma los datos para que tengan una media de 0 y una desviación estándar de 1, permitiendo que el modelo identifique la importancia relativa de cada característica sin que la magnitud de la escala original sesgue los resultados. La fórmula aplicada para cada observación x es:
+
+\$ z=(x−μ)/σ \$
+
+Donde:
+
+- μ es la media de la variable.
+- σ es la desviación estándar.
+
+Por tanto, tenemos:
+
+```{r}
+# Seleccionar solo las columnas numéricas para estandarizar
+columnas_numericas <- c("Id_motor", "Cilindros", "Combinado", "Co2_tubo_escape")
+
+# Crear una copia del dataset para no perder los datos originales
+datos_estandarizados <- datos_sin_errores
+
+# Aplicar la estandarización (Z-score)
+datos_estandarizados[columnas_numericas] <- scale(datos_sin_errores[columnas_numericas])
+
+# Verificar que la media sea 0 y la desviación estándar sea 1
+summary(datos_estandarizados[columnas_numericas])
+```
+
+
+
+```{r}
+# Estandarizar la columna 'Co2_tubo_escape'
+datos_sin_errores$Emisiones_co2_estandarizada <- scale(datos_sin_errores$Co2_tubo_escape)
+
+# Verificar el resultado
+head(datos_sin_errores[, c("Co2_tubo_escape", "Emisiones_co2_estandarizada")])
+```
+```{r}
+# Graficar la distribución de los Z-scores
+hist(datos_sin_errores$Emisiones_co2_estandarizada, 
+     main = "Distribución de Z-scores de Emisiones de CO2", 
+     xlab = "Z-score", 
+     ylab = "Frecuencia", 
+     col = "lightblue", 
+     border = "black")
+```
+> La estandarización de las variables mediante el cálculo de Z-scores nos ha permitido transformar los datos originales a una escala común con media cero y desviación estándar uno, facilitando la identificación de valores atípicos y la comparación entre variables con unidades de medida distintas. El histograma muestra una distribución centrada alrededor del cero, lo que confirma que la mayoría de los vehículos presentan niveles de emisión cercanos al promedio, mientras que los valores fuera del rango de -2 a 2 indican observaciones inusuales, como se observa en el máximo del Co2_tubo_escape de 2.33 o el Combinado de 8.85. Este proceso de normalización es fundamental, ya que al eliminar la influencia de las escalas originales, permite que los modelos estadísticos operen de manera más eficiente y equitativa, garantizando que variables con magnitudes mayores no dominen injustificadamente el análisis sobre aquellas con valores numéricos más pequeños.
+
+# Conclusiones
+El análisis realizado sobre el conjunto de datos de emisiones de CO2 de vehículos de diferentes modelos nos ha permitido caracterizar de manera precisa el comportamiento ambiental de la flota automotriz analizada. A través de un riguroso proceso de limpieza de datos, que incluyó la identificación y exclusión de 726 valores atípicos, logramos reducir la variabilidad extrema y mejorar la representatividad estadística del dataset, pasando de 49927 a 49201 registros. La estandarización de las variables mediante el cálculo de Z-scores confirmó que la mayoría de los vehículos se agrupan en torno a una tendencia central, con una distribución que, aunque presenta un ligero sesgo positivo, es estadísticamente robusta para modelos predictivos. En conclusión, este estudio no solo nos demuestra la importancia de la calidad y el preprocesamiento de datos en la ciencia de datos, sino que también nos proporciona una base sólida para nuestros conocimientos dentro de RStudio, para hacer la evaluación del impacto ambiental y la optimización de políticas de eficiencia energética en el sector automotriz.
+
+# Bibliografía
+
+- Kaggle: https://www.kaggle.com/datasets/sahirmaharajj/fuel-economy
